@@ -1,6 +1,0 @@
-Device dsPIC33FJ128GP802
-set system.disableerrormsg true
-Hwtool pickit3 -p
-Program "serial.hex"
-Reset MCLR
-Quit
