@@ -13,18 +13,16 @@ MCU = 33FJ128GP802
 ARCH = dsPIC33F
 
 # Microcontroller name (for mdb.sh)
-# Example: dsPIC33FJ128GP802
-# or
-# Example: dsPIC$(MCU)
+# Example: dsPIC33FJ128GP802 or dsPIC$(MCU)
 PROGRAMMCU = dsPIC$(MCU)
-
-# Debugging tool (for mdb.sh)
-# Example: pickit -p
-HWTOOL = pickit -p
 
 # Source files
 # Example: serial.c
 SOURCES = serial.c
+
+# Debugging tool (for mdb.sh)
+# Example: pickit -p
+HWTOOL = pickit -p
 
 # Tool paths
 INSTALLPATH  = /opt/microchip/xc16/v1.24
