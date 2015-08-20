@@ -97,7 +97,7 @@ int main()
     serial_init();
 
     while (1) {
-        serial_writeln("Braller");
+        serial_writeln("Hello Uart!");
         __delay_ms(1000);
     }
 

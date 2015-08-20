@@ -7,8 +7,8 @@
 PROJECT = serial
 MCU = 33FJ128GP802
 ARCH = dsPIC33F
+PROGRAMMCU = dsPIC$(MCU)
 SOURCES = serial.c
-PROGRAMMER = ./prog.txt # This is the file with the commands for the PICKIT3
 
 # Declare tools.
 SHELL = /bin/sh
@@ -23,18 +23,27 @@ LDFLAGS =
 
 ELFFILE = $(PROJECT).elf
 HEXFILE = $(PROJECT).hex
+PROGRAMMER = ./prog.txt # This is the file with the commands for the PICKIT3
 
 OBJECTS = $(SOURCES:.c=.o)
-CLEANFILES = *.o *.elf *.hex
+CLEANFILES = *.o *.elf *.hex $(PROGRAMMER)
 
 .SUFFIXES: .c .o
 .PHONY: clean
 
 # Compile
-all: $(HEXFILE)
+all: $(PROGRAMMER) $(HEXFILE)
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
+
+$(PROGRAMMER): 
+	echo "Device $(PROGRAMMCU)" > $(PROGRAMMER)
+	echo "set system.disableerrormsg true" >> $(PROGRAMMER)
+	echo "Hwtool pickit3 -p" >> $(PROGRAMMER)
+	echo "Program \"$(HEXFILE)\"" >> $(PROGRAMMER)
+	echo "Reset MCLR" >> $(PROGRAMMER)
+	echo "Quit" >> $(PROGRAMMER)
 
 $(ELFFILE): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $(ELFFILE) $(OBJECTS)
@@ -42,8 +51,11 @@ $(ELFFILE): $(OBJECTS)
 $(HEXFILE): $(ELFFILE)
 	$(BIN2HEX) $(ELFFILE)
 
+flash: $(HEXFILE)
+	# $(DEBUGGER) $(PROGRAMMER)
+	mdb.sh $(PROGRAMMER)
+	rm -rf MPLABXLog.xml*
+
 clean:
 	rm -rf $(CLEANFILES)
     
-flash:
-	$(DEBUGGER) $(PROGRAMMER)
