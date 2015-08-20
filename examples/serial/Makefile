@@ -25,6 +25,7 @@ SOURCES = serial.c
 HWTOOL = pickit -p
 
 # Tool paths
+# TODO: DEBUGGER is not used!
 INSTALLPATH  = /opt/microchip/xc16/v1.24
 CC           = $(INSTALLPATH)/bin/xc16-gcc
 LINKERSCRIPT = $(INSTALLPATH)/support/$(ARCH)/gld/p$(MCU).gld
@@ -75,7 +76,7 @@ $(HEXFILE): $(ELFFILE)
 
 # TODO: Make this independent of "mdb.sh" path.
 flash: $(PROGRAMMER) $(HEXFILE)
-	# $(DEBUGGER) $(PROGRAMMER)
+	#$(DEBUGGER) $(PROGRAMMER)
 	mdb.sh $(PROGRAMMER)
 	rm -rf MPLABXLog.xml*
 
