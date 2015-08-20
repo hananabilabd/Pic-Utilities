@@ -97,7 +97,7 @@ int main()
     serial_init();
 
     while (1) {
-        serial_writeln("Hello Uart!");
+        serial_writeln("Christine er DEJLIG");
         __delay_ms(1000);
     }
 
