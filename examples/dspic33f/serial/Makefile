@@ -21,8 +21,8 @@ PROGRAMMCU = dsPIC$(MCU)
 SOURCES = serial.c
 
 # Debugging tool (for mdb.sh)
-# Example: pickit -p
-HWTOOL = pickit -p
+# Example: pickit3 -p
+HWTOOL = pickit3 -p
 
 # Tool paths
 # TODO: DEBUGGER is not used!
