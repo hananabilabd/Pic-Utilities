@@ -1,0 +1,7 @@
+Device PIC16F88
+set system.disableerrormsg true
+Hwtool pickit3 -p
+Program "./serial.hex"
+Reset MCLR
+Quit
+
