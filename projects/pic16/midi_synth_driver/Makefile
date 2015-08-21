@@ -2,40 +2,40 @@
 
 # Project name
 # Example: serial
-PROJECT = adcdac_loopback
+PROJECT = midi_synth_driver
 
 # Microcontroller name (for xc16)
 # Example: 33FJ128GP802
-MCU = 33FJ128GP802
+MCU = 16F1704
 
 # Architecture (for xc16)
 # Example: dsPIC33F
-ARCH = dsPIC33F
+ARCH = PIC16F
 
 # Microcontroller name (for mdb.sh)
 # Example: dsPIC33FJ128GP802 or dsPIC$(MCU)
-PROGRAMMCU = dsPIC$(MCU)
+PROGRAMMCU = PIC$(MCU)
+
+# Source files
+# Example: serial.c
+SOURCES = serial.c
 
 # Debugging tool (for mdb.sh)
 # Example: pickit3 -p
 HWTOOL = pickit3 -p
 
-# Source files
-# Example: serial.c
-SOURCES = main.c adcdacDrv.c 
-
 # Tool paths
 # TODO: DEBUGGER is not used!
-INSTALLPATH  = /opt/microchip/xc16/v1.24
-CC           = $(INSTALLPATH)/bin/xc16-gcc
+INSTALLPATH  = /opt/microchip/xc8/v1.34
+CC           = $(INSTALLPATH)/bin/xc8-gcc
 LINKERSCRIPT = $(INSTALLPATH)/support/$(ARCH)/gld/p$(MCU).gld
-BIN2HEX      = $(INSTALLPATH)/bin/xc16-bin2hex
+BIN2HEX      = $(INSTALLPATH)/bin/xc8-bin2hex
 DEBUGGEER    = /opt/microchip/mplabx/v3.00/mplab_ide/bin/mdb.sh
 
 # PROJECT INDEPENDENT SETTINGS #################################################
 
 # Compiler and linker settings:w
-CFLAGS = -mcpu=$(MCU) -Wl,--script=$(LINKERSCRIPT)
+CFLAGS = --chip=$(MCU) -Wl,--script=$(LINKERSCRIPT)
 LDFLAGS =
 
 # Executables
@@ -49,7 +49,8 @@ PROGRAMMER = ./prog.txt
 OBJECTS = $(SOURCES:.c=.o)
 
 # Files to clean when running "make clean"
-CLEANFILES = *.o *.elf *.hex $(PROGRAMMER)
+CLEANFILES = *.o *.elf *.hex *.obj *.rlf *.as *.lst *.obj *.d *.cmf\
+	    *.cof *hxl *.p1 *.pre *.sdb *.sym $(PROGRAMMER)
 
 # MAKE ROUTINES ################################################################
 .SUFFIXES: .c .o
@@ -63,7 +64,6 @@ all: $(PROGRAMMER) $(HEXFILE)
 $(PROGRAMMER): 
 	echo "Device $(PROGRAMMCU)"                  > $(PROGRAMMER)
 	echo "set system.disableerrormsg true"      >> $(PROGRAMMER)
-	echo "set poweroptions.powerenable true"    >> $(PROGRAMMER)
 	echo "Hwtool $(HWTOOL)"                     >> $(PROGRAMMER)
 	echo "Program \"$(HEXFILE)\""               >> $(PROGRAMMER)
 	echo "Reset MCLR"                           >> $(PROGRAMMER)
