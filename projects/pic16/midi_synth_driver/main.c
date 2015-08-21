@@ -31,15 +31,15 @@ void fuse_init()
 void pin_init()
 {
 	/*                          PIC16F1704
-	 *              --------------------------------
-	 *             | VDD                        VSS |
-	 *             | RA5                RA0/ICSPDAT |
-	 *             | RA4                RA1/ICSPCLK |
-	 *             | VPP/MCLR#/RA3              RA2 |
-	 *             | RC5                        RC0 | CS#
-	 *          TX | RC4                        RC1 | SCK
-	 *          RX | RC3                        RC2 | MOSI
-	 *              --------------------------------
+	 *        --------------------------------
+	 *       | VDD                        VSS |
+	 *       | RA5                RA0/ICSPDAT |
+	 *       | RA4                RA1/ICSPCLK |
+	 *       | VPP/MCLR#/RA3              RA2 |
+	 *       | RC5                        RC0 | CS#
+	 *    TX | RC4                        RC1 | SCK
+	 *    RX | RC3                        RC2 | MOSI
+	 *        --------------------------------
 	 */
 
 
