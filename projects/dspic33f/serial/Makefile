@@ -63,6 +63,7 @@ all: $(PROGRAMMER) $(HEXFILE)
 $(PROGRAMMER): 
 	echo "Device $(PROGRAMMCU)"                  > $(PROGRAMMER)
 	echo "set system.disableerrormsg true"      >> $(PROGRAMMER)
+	echo "set poweroptions.powerenable true"    >> $(PROGRAMMER)
 	echo "Hwtool $(HWTOOL)"                     >> $(PROGRAMMER)
 	echo "Program \"$(HEXFILE)\""               >> $(PROGRAMMER)
 	echo "Reset MCLR"                           >> $(PROGRAMMER)
