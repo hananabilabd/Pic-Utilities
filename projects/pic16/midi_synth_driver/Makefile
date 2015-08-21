@@ -1,24 +1,20 @@
 # PROJECT SETUP ################################################################
 
-# Project name
-# Example: serial
-PROJECT = midi_synth_driver
+# Source files
+# Example: serial.c
+SOURCES = main.c
 
-# Microcontroller name (for xc16)
+# Hex file name (same basename as the first file in SOURCES!)
+# Example serial.hex
+HEXFILE = main.hex
+
+# Microcontroller name (for xc8)
 # Example: 33FJ128GP802
 MCU = 16F1704
-
-# Architecture (for xc16)
-# Example: dsPIC33F
-ARCH = PIC16F
 
 # Microcontroller name (for mdb.sh)
 # Example: dsPIC33FJ128GP802 or dsPIC$(MCU)
 PROGRAMMCU = PIC$(MCU)
-
-# Source files
-# Example: serial.c
-SOURCES = main.c
 
 # Debugging tool (for mdb.sh)
 # Example: pickit3 -p
@@ -37,13 +33,8 @@ DEBUGGEER    = /opt/microchip/mplabx/v3.00/mplab_ide/bin/mdb.sh
 # PROJECT INDEPENDENT SETTINGS #################################################
 
 # Compiler and linker settings:w
-# CFLAGS = --chip=$(MCU) -Wl,--script=$(LINKERSCRIPT)
 CFLAGS = --chip=$(MCU)
 LDFLAGS =
-
-# Executables
-# HEXFILE = $(PROJECT).hex
-HEXFILE = main.hex
 
 # Programming file -- mdb commands will be stored here
 PROGRAMMER = ./prog.txt
@@ -56,11 +47,10 @@ CLEANFILES = *.o *.elf *.obj *.rlf *.as *.lst *.obj *.d *.cmf\
 .SUFFIXES: .c .o
 .PHONY: clean
 
-all: $(PROGRAMMER) $(HEXFILE)
+all: $(HEXFILE)
 
 $(PROGRAMMER): 
 	echo "Device $(PROGRAMMCU)"                  > $(PROGRAMMER)
-	echo "set system.disableerrormsg true"      >> $(PROGRAMMER)
 	echo "set poweroptions.powerenable true"    >> $(PROGRAMMER)
 	echo "set voltagevalue $(VOLTAGE)"          >> $(PROGRAMMER)
 	echo "Hwtool $(HWTOOL)"                     >> $(PROGRAMMER)
@@ -79,6 +69,9 @@ flash: $(PROGRAMMER) $(HEXFILE)
 
 clean:
 	rm -rf $(CLEANFILES)
+
+cleanall:
+	rm -rf $(CLEANFILES) $(HEXFILE)
     
 # REFERENCES ###################################################################
 # [1] http://www.electropepper.org/blog/item/linux-terminal-only-pic-programming
