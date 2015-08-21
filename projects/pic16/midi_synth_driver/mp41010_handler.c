@@ -1,7 +1,7 @@
 // vim: ts=8
 /**
  * \todo The code
-\code
+\verbatim
 while (1) {
 	set_resistance(E1);
 	__delay_ms(1000);
@@ -10,7 +10,7 @@ while (1) {
 	set_resistance(D2);
 	__delay_ms(1000);
 }
- \endcode
+ \endverbatim
  * does not work. Only two tones are played.
  * Something may be wrong with the delay.
  */
@@ -62,7 +62,7 @@ void pin_init()
 	GIE = state;
 }
 
-void spi_init()()
+void spi_init()
 {
 	// Clock source: FOSC/4
 	SSP1CON1bits.SSPM = 0x00;
@@ -123,13 +123,12 @@ int main(void)
 
 	fuse_init();
 	pin_init();
-	spi_init()();
+	spi_init();
 
 	uint16_t arr[6] = {E1,A1,D2,E1,A1,D2};
 	
 	while (1) {
-		for (int i = 0; i < 6; i++)
-		{
+		for (int i = 0; i < 6; i++) {
 			set_resistance(arr[i]);
 			__delay_ms(200);
 		}

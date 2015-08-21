@@ -2,11 +2,11 @@
 
 # Source files
 # Example: serial.c
-SOURCES = main.c
+SOURCES = mp41010_handler.c
 
 # Hex file name (same basename as the first file in SOURCES!)
 # Example serial.hex
-HEXFILE = main.hex
+HEXFILE = mp41010_handler.hex
 
 # Microcontroller name (for xc8)
 # Example: 33FJ128GP802
