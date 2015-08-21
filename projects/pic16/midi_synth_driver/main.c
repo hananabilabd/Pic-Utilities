@@ -1,4 +1,4 @@
-// vim: ts=8
+// vim: noexpandtab ts=8 sw=8
 /**
  * \todo The code
 \verbatim
@@ -30,6 +30,19 @@ void fuse_init()
 
 void pin_init()
 {
+	/*                          PIC16F1704
+	 *              --------------------------------
+	 *             | VDD                        VSS |
+	 *             | RA5                RA0/ICSPDAT |
+	 *             | RA4                RA1/ICSPCLK |
+	 *             | VPP/MCLR#/RA3              RA2 |
+	 *             | RC5                        RC0 | CS#
+	 *          TX | RC4                        RC1 | SCK
+	 *          RX | RC3                        RC2 | MOSI
+	 *              --------------------------------
+	 */
+
+
 	LATC = 0b00000000; // All pins low
 	TRISC = 0x0b00111000; // #SS, SCK, SDO = outputs
 	ANSELC = 0b00000000; // Analog selection: No analog input
@@ -51,7 +64,6 @@ void pin_init()
 	SSPCLKPPS = 0x11; // RC1->MSSP:SCK (input)
 	RC1PPS = 0x10; // RC1->MSSP:SCK (output)
 	RC2PPS = 0x12; // RC2->MSSP:SDO (output)
-	SSPDATPPS = 0x13; // RC3->MSSP:SDI (input)
 
 	// Lock sequence for PPS
 	PPSLOCK = 0x55;
