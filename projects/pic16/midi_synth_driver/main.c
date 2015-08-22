@@ -20,6 +20,7 @@ while (1) {
 #include <xc.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #define SS_POTMETER LATCbits.LATC0
 
@@ -42,9 +43,8 @@ void pin_init()
 	 *        --------------------------------
 	 */
 
-
 	LATC = 0b00000000; // All pins low
-	TRISC = 0x0b00111000; // #SS, SCK, SDO = outputs
+	TRISC = 0b00001000; // #SS, SCK, SDO, TX = outputs
 	ANSELC = 0b00000000; // Analog selection: No analog input
 	WPUC = 0b00000000; // Disable weak pull-ups
 
@@ -65,6 +65,10 @@ void pin_init()
 	RC1PPS = 0x10; // RC1->MSSP:SCK (output)
 	RC2PPS = 0x12; // RC2->MSSP:SDO (output)
 
+	// Link pins and EUSART
+	RXPPS = 0x13; // UART RX
+	RC4PPS = 0x14; // UART TX
+
 	// Lock sequence for PPS
 	PPSLOCK = 0x55;
 	PPSLOCK = 0xAA;
@@ -72,6 +76,67 @@ void pin_init()
 
 	// Restore interrupt state
 	GIE = state;
+}
+
+void serial_init()
+{
+	// Baud rate
+	// 1. Initialize the SPBRGH, SPBRGL register pair and the BRGH and BRG16
+	// bits to achieve the desired baud rate (see Section 29.4 "EUSART Baud
+	// Rate Generator (BRG)").
+	SPBRGH = 0;
+	SPBRGL = 25;
+	TX1STAbits.BRGH = 0;
+	BAUD1CONbits.BRG16 = 0;
+	
+	// 2. Enable the asynchronous serial port by clearing the SYNC bit and
+	// setting the SPEN bit.
+	TX1STAbits.SYNC = 0;
+	RC1STAbits.SPEN = 1;
+
+	// 5. Enable the transmission by setting the TXEN control bit. This
+	// will cause the TXIF interrupt bit to be set.
+	TX1STAbits.TXEN = 1;
+
+	// 6. Enable reception by setting the CREN bit.
+	RC1STAbits.CREN = 1;
+
+	// 8. Load 8-bit data into the TXREG register. This will start the
+	// transmission.
+}
+
+void serial_writebyte(char byte)
+{
+	while (!PIR1bits.TXIF); // Wait for buffer space...
+	TXREG = byte;
+}
+
+void serial_write(char *str)
+{
+	int i;
+	for (i = 0; i < strlen(str); i++) {
+		serial_writebyte(str[i]);
+	}
+}
+
+void serial_writeln(char *str)
+{
+	serial_write(str);
+	serial_writebyte('\n');
+}
+
+char serial_readbyte()
+{
+	while (!PIR1bits.RCIF);
+
+	if (1 == RC1STAbits.OERR) {
+		// Overrun occured -- resetting receiver enable bit
+
+		RC1STAbits.CREN = 0;
+		RC1STAbits.CREN = 1;
+	}
+
+	return RC1REG;
 }
 
 void spi_init()
@@ -136,14 +201,17 @@ int main(void)
 	fuse_init();
 	pin_init();
 	spi_init();
+	serial_init();
 
 	uint16_t arr[6] = {E1,A1,D2,E1,A1,D2};
 	
 	while (1) {
-		for (int i = 0; i < 6; i++) {
-			set_resistance(arr[i]);
-			__delay_ms(200);
-		}
+		/* for (int i = 0; i < 6; i++) { */
+		/* 	set_resistance(arr[i]); */
+		/* 	__delay_ms(200); */
+		/* } */
+
+		serial_writebyte(serial_readbyte());
 	}
 	return 0;
 }

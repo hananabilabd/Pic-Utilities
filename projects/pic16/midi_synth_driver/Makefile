@@ -2,7 +2,7 @@
 
 # Source files
 # Example: serial.c
-SOURCES = main.c
+SOURCES = main.c eusart.c
 
 # Hex file name (same basename as the first file in SOURCES!)
 # Example serial.hex
