@@ -94,6 +94,12 @@ void serial_init()
 	TX1STAbits.SYNC = 0;
 	RC1STAbits.SPEN = 1;
 
+	// 4. If interrupts are desired, set the RCIE bit of the PIE1 register
+	// and the GIE and PEIE bits of the INTCON register.
+	PIE1bits.RCIE = 1;
+	INTCONbits.GIE = 1;
+	INTCONbits.PEIE = 1;
+	
 	// 5. Enable the transmission by setting the TXEN control bit. This
 	// will cause the TXIF interrupt bit to be set.
 	TX1STAbits.TXEN = 1;
@@ -137,6 +143,15 @@ char serial_readbyte()
 	}
 
 	return RC1REG;
+}
+
+void interrupt ISR()
+{
+	// UART Receiver
+	if (PIR1bits.RCIF) {
+		serial_writebyte(RC1REG);
+		PIR1bits.RCIF = 0;
+	}
 }
 
 void spi_init()
@@ -210,8 +225,6 @@ int main(void)
 		/* 	set_resistance(arr[i]); */
 		/* 	__delay_ms(200); */
 		/* } */
-
-		serial_writebyte(serial_readbyte());
 	}
 	return 0;
 }
