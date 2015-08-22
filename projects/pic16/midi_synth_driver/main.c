@@ -31,7 +31,7 @@ void fuse_init()
 
 void pin_init()
 {
-	/*                          PIC16F1704
+	/*                   PIC16F1704
 	 *        --------------------------------
 	 *       | VDD                        VSS |
 	 *       | RA5                RA0/ICSPDAT |
@@ -78,6 +78,7 @@ void pin_init()
 	GIE = state;
 }
 
+#define SERIAL_BAUD 9600
 void serial_init()
 {
 	// Baud rate
@@ -85,8 +86,8 @@ void serial_init()
 	// bits to achieve the desired baud rate (see Section 29.4 "EUSART Baud
 	// Rate Generator (BRG)").
 	SPBRGH = 0;
-	SPBRGL = 25;
-	TX1STAbits.BRGH = 0;
+	SPBRGL = _XTAL_FREQ/SERIAL_BAUD/16 - 1;
+	TX1STAbits.BRGH = 1;
 	BAUD1CONbits.BRG16 = 0;
 	
 	// 2. Enable the asynchronous serial port by clearing the SYNC bit and
@@ -111,13 +112,13 @@ void serial_init()
 	// transmission.
 }
 
-void serial_writebyte(char byte)
+void serial_writebyte(uint8_t byte)
 {
 	while (!PIR1bits.TXIF); // Wait for buffer space...
 	TXREG = byte;
 }
 
-void serial_write(char *str)
+void serial_write(uint8_t *str)
 {
 	int i;
 	for (i = 0; i < strlen(str); i++) {
@@ -125,33 +126,29 @@ void serial_write(char *str)
 	}
 }
 
-void serial_writeln(char *str)
+void serial_writeln(uint8_t *str)
 {
 	serial_write(str);
 	serial_writebyte('\n');
-}
-
-char serial_readbyte()
-{
-	while (!PIR1bits.RCIF);
-
-	if (1 == RC1STAbits.OERR) {
-		// Overrun occured -- resetting receiver enable bit
-
-		RC1STAbits.CREN = 0;
-		RC1STAbits.CREN = 1;
-	}
-
-	return RC1REG;
 }
 
 void interrupt ISR()
 {
 	// UART Receiver
 	if (PIR1bits.RCIF) {
-		serial_writebyte(RC1REG);
+		while (!PIR1bits.RCIF);
+
+		if (RC1STAbits.OERR) {
+			// Overflow occured
+			RC1STAbits.CREN = 0;
+			RC1STAbits.CREN = 1;
+		}
+		uint8_t rx = RC1REG;
+		if (rx != 0xff)
+			serial_writebyte(rx);
 		PIR1bits.RCIF = 0;
 	}
+	
 }
 
 void spi_init()
