@@ -36,10 +36,10 @@ void pin_init()
 	 *       | VDD                        VSS |
 	 *       | RA5                RA0/ICSPDAT |
 	 *       | RA4                RA1/ICSPCLK |
-	 *       | VPP/MCLR#/RA3              RA2 |
-	 *       | RC5                        RC0 | CS#
-	 *    TX | RC4                        RC1 | SCK
-	 *    RX | RC3                        RC2 | MOSI
+	 *       | VPP/MCLR#/RA3              RA2 | TEST LED
+	 *       | RC5                        RC0 | CS# (blue)
+	 *    TX | RC4                        RC1 | SCK (purple)
+	 *    RX | RC3                        RC2 | MOSI (gray)
 	 *        --------------------------------
 	 */
 
@@ -47,6 +47,9 @@ void pin_init()
 	TRISC = 0b00001000; // #SS, SCK, SDO, TX = outputs
 	ANSELC = 0b00000000; // Analog selection: No analog input
 	WPUC = 0b00000000; // Disable weak pull-ups
+
+	TRISAbits.TRISA2 = 0; // Output test led
+	LATAbits.LATA2 = 0;
 
 	// Disable weak pull-ups
 	OPTION_REGbits.nWPUEN = 0x01;
@@ -78,7 +81,7 @@ void pin_init()
 	GIE = state;
 }
 
-#define SERIAL_BAUD 9600
+#define SERIAL_BAUD 31250
 void serial_init()
 {
 	// Baud rate
@@ -132,11 +135,20 @@ void serial_writeln(uint8_t *str)
 	serial_writebyte('\n');
 }
 
+typedef struct {
+	uint8_t status;
+	uint8_t key;
+	uint8_t velocity;
+} midimsg;
+
+static int msgcnt = 0;
+static midimsg lastmsg;
+
 void interrupt ISR()
 {
 	// UART Receiver
 	if (PIR1bits.RCIF) {
-		while (!PIR1bits.RCIF);
+		/* while (!PIR1bits.RCIF); */
 
 		if (RC1STAbits.OERR) {
 			// Overflow occured
@@ -144,8 +156,33 @@ void interrupt ISR()
 			RC1STAbits.CREN = 1;
 		}
 		uint8_t rx = RC1REG;
-		if (rx != 0xff)
-			serial_writebyte(rx);
+
+		if (rx == 0x90) // Received KEY_DOWN event
+			msgcnt = 0;
+
+		switch (msgcnt) {
+		case 0:
+			lastmsg.status = rx;
+			msgcnt++;
+			break;
+		case 1:
+			lastmsg.key = rx;
+			msgcnt++;
+			break;
+		case 2:
+			lastmsg.velocity = rx;
+			msgcnt++;
+			if (lastmsg.velocity == 0x00) { // KEY_UP event
+				serial_writebyte(lastmsg.key);
+				LATAbits.LATA2 = 1;
+				__delay_ms(100);
+				LATAbits.LATA2 = 0;
+			}
+			break;
+		default:
+			break;
+		}
+
 		PIR1bits.RCIF = 0;
 	}
 	
