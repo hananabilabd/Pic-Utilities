@@ -1,42 +1,8 @@
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
-// © 2012 Microchip Technology Inc.
-//
-// MICROCHIP SOFTWARE NOTICE AND DISCLAIMER:  You may use this software, and any
-// derivatives created by any person or entity by or on your behalf, exclusively with
-// Microchip?s products.  Microchip and its licensors retain all ownership and intellectual
-// property rights in the accompanying software and in all derivatives here to.
-//
-// This software and any accompanying information is for suggestion only.  It does not
-// modify Microchip?s standard warranty for its products.  You agree that you are solely
-// responsible for testing the software and determining its suitability.  Microchip has
-// no obligation to modify, test, certify, or support the software.
-//
-// THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
-// OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF NON-INFRINGEMENT,
-// MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE, ITS INTERACTION
-// WITH MICROCHIP?S PRODUCTS, COMBINATION WITH ANY OTHER PRODUCTS, OR USE IN ANY APPLICATION.
-//
-// IN NO EVENT, WILL MICROCHIP BE LIABLE, WHETHER IN CONTRACT, WARRANTY, TORT
-// (INCLUDING NEGLIGENCE OR BREACH OF STATUTORY DUTY), STRICT LIABILITY, INDEMNITY,
-// CONTRIBUTION, OR OTHERWISE, FOR ANY INDIRECT, SPECIAL, PUNITIVE, EXEMPLARY, INCIDENTAL
-// OR CONSEQUENTIAL LOSS, DAMAGE, FOR COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE
-// SOFTWARE, HOWSOEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF THE POSSIBILITY OR
-// THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT ALLOWABLE BY LAW, MICROCHIP'S TOTAL
-// LIABILITY ON ALL CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES,
-// IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
-//
-// MICROCHIP PROVIDES THIS SOFTWARE CONDITIONALLY UPON YOUR ACCEPTANCE OF THESE TERMS.
-//
-// ****************************************************************************
-// ****************************************************************************/
-
 #include "p33FJ128GP802.h"
 #include "dsp.h"
 #include "adcdacDrv.h"
 
-fractional BufferA[NUMSAMP] __attribute__((space(dma))); // Ping-pong buffer A
-fractional BufferB[NUMSAMP] __attribute__((space(dma))); // Ping-pong buffer B
+fractional buffer[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 
 /*=============================================================================
 initAdc() is used to configure A/D to convert channel 4 on Timer event. 
@@ -120,20 +86,19 @@ DMA0 configuration
  AMODE: Register indirect with post increment
  MODE: Continuous, Ping-Pong Mode
  IRQ: ADC Interrupt
- ADC stores results stored alternatively between BufferA[] and BufferB[]
+ ADC stores results stored in _buffer_
 =============================================================================*/
 void initDma0(void)
 {
     DMA0CONbits.AMODE = 0; // Configure DMA for Register indirect with post increment
-    DMA0CONbits.MODE = 2; // Configure DMA for Continuous Ping-Pong mode
+    DMA0CONbits.MODE = 0; // Configure DMA for Continuous, no Ping-Pong mode
 
     DMA0PAD = (int) &ADC1BUF0; // Peripheral Address Register: ADC buffer
     DMA0CNT = (NUMSAMP - 1); // DMA Transfer Count is (NUMSAMP-1)
 
     DMA0REQ = 13; // ADC interrupt selected for DMA channel IRQ
 
-    DMA0STA = __builtin_dmaoffset(BufferA); // DMA RAM Start Address A
-    DMA0STB = __builtin_dmaoffset(BufferB); // DMA RAM Start Address B
+    DMA0STA = __builtin_dmaoffset(buffer); // DMA RAM start address
 
     IFS0bits.DMA0IF = 0; // Clear the DMA interrupt flag bit
     IEC0bits.DMA0IE = 1; // Set the DMA interrupt enable bit
@@ -144,13 +109,11 @@ void initDma0(void)
 /*=============================================================================
 _DMA0Interrupt(): ISR name is chosen from the device linker script.
 =============================================================================*/
-unsigned int DmaBuffer = 0;
 int flag = 0;
-
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
-    DmaBuffer ^= 1; // Ping-pong buffer select flag
-    flag = 1; // Ping-pong buffer full flag
+    flag = 1;
+
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
@@ -162,8 +125,9 @@ void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
     IFS4bits.DAC1RIF = 0; // Clear Right Channel Interrupt Flag
 }
 
-
-
-
-
-
+void __attribute__((interrupt, no_auto_psv)) _ADC1Interrupt(void)
+{
+    static int led;
+    LATBbits.LATB3 = led ? 0 : 1;
+    led = led ? 0 : 1;
+}
