@@ -2,11 +2,12 @@
 #define __ADCDRV1_H__ 
 
 // Sampling Control
-#define Fosc	 79227500     // Hz
-#define Fcy	 (Fosc/2)     // Hz
+#define FOSC	 79227500     // Hz
+#define FCY	 (FOSC/2)     // Hz
 #define Fs   	 44113       // Hz
-#define SAMPPRD  (Fcy/Fs)-1   // Hz
+#define SAMPPRD  (FCY/Fs)-1   // Hz
 #define NUMSAMP  256
+
 
 // Functions
 void initAdc(void);

@@ -106,16 +106,15 @@ void initDma0(void)
     DMA0CONbits.CHEN = 1; // Enable DMA channel
 }
 
-int flag = 0;
 int dmabuffer = 0;
 int sample = 0;
+int samplemax = 0;
 
 /**
  * Interrupt for each full buffer.
  */
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
-    /* flag = 1; */
     dmabuffer ^= 1;
     sample = 0;
     TOGGLE_LED;
@@ -129,5 +128,7 @@ void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     /* DAC1RDAT = sample++<<8; // Sawtooth generator */
     DAC1RDAT = buffer[0][sample++];
+    if (samplemax < sample)
+        samplemax = sample;
     IFS4bits.DAC1RIF = 0;
 }
