@@ -3,8 +3,9 @@
 #include "dsp.h"
 #include "adcdacDrv.h"
 
-int16_t buffer_a[NUMSAMP] __attribute__((space(dma))); // Buffer for data
-int16_t buffer_b[NUMSAMP] __attribute__((space(dma))); // Buffer for data
+static int buffer_a[NUMSAMP] __attribute__((space(dma))); // Buffer for data
+static int buffer_b[NUMSAMP] __attribute__((space(dma))); // Buffer for data
+static int *buffer[] = {buffer_a, buffer_b}; // Index buffer as buffer[a_or_b][sample]
 
 #define TOGGLE_LED do {\
     static int __macro_led = 0;\
@@ -127,7 +128,8 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     /* DAC1RDAT = buffer[dmabuffer][sample]; */
-    DAC1RDAT = dmabuffer ? buffer_a[sample] : buffer_b[sample];
+    /* DAC1RDAT = dmabuffer ? buffer_a[sample] : buffer_b[sample]; */
+    DAC1RDAT = buffer[dmabuffer][sample];
     if (++sample >= NUMSAMP)
         sample = NUMSAMP-1;
     IFS4bits.DAC1RIF = 0;
