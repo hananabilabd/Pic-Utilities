@@ -48,16 +48,17 @@ void initAdc(void)
 void initDac(void)
 {
     /* Initiate DAC Clock */
-    ACLKCONbits.SELACLK = 0; // FRC w/ Pll as Clock Source
-    ACLKCONbits.AOSCMD = 0; // Auxiliary Oscillator Disabled
-    ACLKCONbits.ASRCSEL = 0; // Auxiliary Oscillator is the Clock Source
-    ACLKCONbits.APSTSCLR = 7; // Fvco/1 = 158.2 MHz/1 = 158.2 MHz
+    // Set up DAC clock to be syncronous with Timer 3
+    ACLKCONbits.SELACLK = 0; // FRC + PLL as clock
+    ACLKCONbits.AOSCMD = 0; // Disable ACLK (PLL used instead)
+    ACLKCONbits.ASRCSEL = 0; // Use auxillary oscillator (not used)
+    ACLKCONbits.APSTSCLR = 7; // ACLK = FVCO/1 = 147.456 MHz
 
     DAC1STATbits.ROEN = 1; // Right Channel DAC Output Enabled
     DAC1DFLT = 0x8000; // DAC Default value is the midpoint
 
-    // Sampling Rate Fs = DACCLK/256 = 44113 Hz
-    DAC1CONbits.DACFDIV = 13; // 158.2e6 / (44113*256) - 1 = 13
+    // Sampling Rate Fs = DACCLK/256 = 48000
+    DAC1CONbits.DACFDIV = 12; // ACLK / (Fs*256) = 12
 
     DAC1CONbits.FORM = 1; // Data Format is signed integer
     DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
@@ -118,14 +119,18 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
+int samplemax = 0;
 /**
  * Interrupt for each output sample, Ts.
  */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     DAC1RDAT = buffer[dmabuffer][sample];
-    if (++sample >= NUMSAMP)
-        sample = NUMSAMP-1;
+    sample++;
+    /* if (++sample >= NUMSAMP) */
+    /*     sample = NUMSAMP-1; */
 
+    if (samplemax < sample)
+        samplemax = sample;
     IFS4bits.DAC1RIF = 0;
 }

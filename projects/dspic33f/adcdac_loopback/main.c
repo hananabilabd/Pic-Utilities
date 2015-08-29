@@ -14,13 +14,13 @@ _FOSCSEL(FNOSC_FRCPLL); // Use PLL with oscillator
  */
 void initPll()
 {
-    CLKDIVbits.PLLPRE = 0;
-    PLLFBDbits.PLLDIV = 42 - 2; // (divisor is 2 more than the value)
-    CLKDIVbits.PLLPOST = 0;
+    //                         Fin = 7.37 MHz
+    CLKDIVbits.PLLPRE = 0;  // (1) Divide by (PLLPRE+2)
+    PLLFBDbits.PLLDIV = 38; // (2) Multiply by (PLLDIV+2)
+    CLKDIVbits.PLLPOST = 0; // (3) Divide by 2*(PLLPOST+1)
     
-    // 40 x: 73.700000 MHz = 36.850000 MIPS
-    // 42 x: 77.385 MHz = 38.6925 MIPS
-    // 43 x: 79.2275 MHz = 39.61375 MIPS
+    // 40 x: 73.7 MHz
+
     
     while (OSCCONbits.LOCK != 1); // Wait for PLL to lock
     RCONbits.SWDTEN = 0; // Disable Watch Dog Timer
@@ -45,10 +45,14 @@ int main(void)
     serial_writeln("Starting...");
 
     char msg[81];
+    extern int samplemax;
 
     while (1) { 
         // Interrupt driven execution.
         // Debug printing done here.
+        sprintf(msg, "Sample Max: %d", samplemax);
+        serial_writeln(msg);
+        __delay_ms(1000);
     }
 
     return 0;
