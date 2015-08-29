@@ -3,7 +3,7 @@
 #include "dsp.h"
 #include "adcdacDrv.h"
 
-int16_t buffer[2][NUMSAMP] __attribute__((space(dma))); // Buffer for data
+int16_t buffer[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 #define TOGGLE_LED do {\
     static int __macro_led = 0;\
     LATBbits.LATB3 = __macro_led;\
@@ -90,15 +90,15 @@ void initDma0(void)
 {
     DMA0CONbits.AMODE = 0; // Configure DMA for Register indirect with post increment
     /* DMA0CONbits.MODE = 2; // Configure DMA for Continuous, Ping-Pong mode */
-    DMA0CONbits.MODE = 0; // Configure DMA for Continuous, Ping-Pong mode
+    DMA0CONbits.MODE = 0; // Configure DMA for Continuous, no Ping-Pong mode
 
     DMA0PAD = (int) &ADC1BUF0; // Peripheral Address Register: ADC buffer
     DMA0CNT = (NUMSAMP - 1); // DMA Transfer Count is (NUMSAMP-1)
 
     DMA0REQ = 13; // ADC interrupt selected for DMA channel IRQ
 
-    DMA0STA = __builtin_dmaoffset(&buffer); // DMA RAM start address A
-    DMA0STB = __builtin_dmaoffset(&buffer + NUMSAMP); // DMA RAM start address B
+    DMA0STA = __builtin_dmaoffset(buffer); // DMA RAM start address A
+    /* DMA0STB = __builtin_dmaoffset(buffer + NUMSAMP); // DMA RAM start address B */
 
     IFS0bits.DMA0IF = 0; // Clear the DMA interrupt flag bit
     IEC0bits.DMA0IE = 1; // Set the DMA interrupt enable bit
@@ -108,14 +108,13 @@ void initDma0(void)
 
 int dmabuffer = 0;
 int sample = 0;
-int samplemax = 0;
 
 /**
  * Interrupt for each full buffer.
  */
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
-    dmabuffer ^= 1;
+    /* dmabuffer ^= 1; */
     sample = 0;
     TOGGLE_LED;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
@@ -126,9 +125,8 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
  */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
-    /* DAC1RDAT = sample++<<8; // Sawtooth generator */
-    DAC1RDAT = buffer[0][sample++];
-    if (samplemax < sample)
-        samplemax = sample;
+    DAC1RDAT = buffer[sample];
+    if (++sample >= NUMSAMP)
+        sample = NUMSAMP-1;
     IFS4bits.DAC1RIF = 0;
 }
