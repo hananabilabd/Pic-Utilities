@@ -1,18 +1,17 @@
-#include "p33FJ128GP802.h"
+#include <xc.h>
+#include <stdint.h>
 #include "dsp.h"
 #include "adcdacDrv.h"
 
-fractional buffer[2][NUMSAMP] __attribute__((space(dma))); // Buffer for data
+int16_t buffer[2][NUMSAMP] __attribute__((space(dma))); // Buffer for data
 #define TOGGLE_LED do {\
-    static int led = 0;\
-    LATBbits.LATB3 = led;\
-    led ^= 1; } while (0);
+    static int __macro_led = 0;\
+    LATBbits.LATB3 = __macro_led;\
+    __macro_led ^= 1; } while (0);
 
-
-/*=============================================================================
-initAdc() is used to configure A/D to convert channel 4 on Timer event. 
-It generates event to DMA on every sample/convert sequence.  
-=============================================================================*/
+/**
+ * Initialize Analog-to-Digial converter.
+ */
 void initAdc(void)
 {
     AD1CON1bits.FORM = 3; // Data Output Format: Signed Fraction (Q15 format)
@@ -44,9 +43,9 @@ void initAdc(void)
     AD1CON1bits.ADON = 1; // Turn on the A/D converter	
 }
 
-/*=============================================================================
-initDac() is used to configure D/A. 
-=============================================================================*/
+/**
+ * Initialize Audio DAC.
+ */
 void initDac(void)
 {
     /* Initiate DAC Clock */
@@ -64,17 +63,16 @@ void initDac(void)
     DAC1CONbits.FORM = 1; // Data Format is signed integer
     DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
 
+    DAC1STATbits.RITYPE = 1; // Interrupt when FIFO is empty
+    IFS4bits.DAC1RIF = 0; // Clear Right Channel Interrupt Flag
+    IEC4bits.DAC1RIE = 1; // Right Channel Interrupt Enabled
+
     DAC1CONbits.DACEN = 1; // DAC1 Module Enabled
 }
 
-/*=======================================================================================  
-Timer 3 is setup to time-out every Ts secs. As a result, the module 
-will stop sampling and trigger a conversion on every Timer3 time-out Ts. 
-At that time, the conversion process starts and completes Tc=12*Tad periods later.
-When the conversion completes, the module starts sampling again. However, since Timer3 
-is already on and counting, about (Ts-Tc)us later, Timer3 will expire again and trigger 
-next conversion. 
-=======================================================================================*/
+/**
+ * Timer 3: Used for triggering DMA0.
+ */
 void initTmr3()
 {
     TMR3 = 0x0000; // Clear TMR3
@@ -85,14 +83,9 @@ void initTmr3()
     T3CONbits.TON = 1; // Enable Timer 3
 }
 
-/*=============================================================================  
-DMA0 configuration
- Direction: Read from peripheral address 0-x300 (ADC1BUF0) and write to DMA RAM 
- AMODE: Register indirect with post increment
- MODE: Continuous, Ping-Pong Mode
- IRQ: ADC Interrupt
- ADC stores results stored in _buffer_
-=============================================================================*/
+/**
+ * DMA0: Move data from ADC0 to buffer.
+ */
 void initDma0(void)
 {
     DMA0CONbits.AMODE = 0; // Configure DMA for Register indirect with post increment
@@ -113,23 +106,28 @@ void initDma0(void)
     DMA0CONbits.CHEN = 1; // Enable DMA channel
 }
 
-/*=============================================================================
-_DMA0Interrupt(): ISR name is chosen from the device linker script.
-=============================================================================*/
 int flag = 0;
 int dmabuffer = 0;
+int sample = 0;
+
+/**
+ * Interrupt for each full buffer.
+ */
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
-    flag = 1;
+    /* flag = 1; */
     dmabuffer ^= 1;
+    sample = 0;
     TOGGLE_LED;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
-/*=============================================================================
-_DAC1RInterrupt(): ISR name is chosen from the device linker script.
-=============================================================================*/
+/**
+ * Interrupt for each output sample, Ts.
+ */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
-    IFS4bits.DAC1RIF = 0; // Clear Right Channel Interrupt Flag
+    /* DAC1RDAT = sample++<<8; // Sawtooth generator */
+    DAC1RDAT = buffer[0][sample++];
+    IFS4bits.DAC1RIF = 0;
 }
