@@ -70,7 +70,7 @@ void initDac(void)
 }
 
 /**
- * Timer 3: Used for triggering DMA0.
+ * Timer 3: Used for triggering ADC conversion.
  */
 void initTmr3()
 {
@@ -104,8 +104,8 @@ void initDma0(void)
     DMA0CONbits.CHEN = 1; // Enable DMA channel
 }
 
-int dmabuffer = 0;
-int sample = 0;
+static int dmabuffer = 0;
+static int sample = 0;
 
 /**
  * Interrupt for each full buffer.
@@ -123,10 +123,9 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
  */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
-    /* DAC1RDAT = buffer[dmabuffer][sample]; */
-    /* DAC1RDAT = dmabuffer ? buffer_a[sample] : buffer_b[sample]; */
     DAC1RDAT = buffer[dmabuffer][sample];
     if (++sample >= NUMSAMP)
         sample = NUMSAMP-1;
+
     IFS4bits.DAC1RIF = 0;
 }
