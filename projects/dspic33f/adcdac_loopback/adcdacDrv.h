@@ -4,7 +4,7 @@
 // Sampling Control
 #define Fosc	 79227500     // Hz
 #define Fcy	 (Fosc/2)     // Hz
-#define Fs   	 103160       // Hz
+#define Fs   	 44113       // Hz
 #define SAMPPRD  (Fcy/Fs)-1   // Hz
 #define NUMSAMP  256
 

@@ -2,7 +2,12 @@
 #include "dsp.h"
 #include "adcdacDrv.h"
 
-fractional buffer[NUMSAMP] __attribute__((space(dma))); // Buffer for data
+fractional buffer[2][NUMSAMP] __attribute__((space(dma))); // Buffer for data
+#define TOGGLE_LED do {\
+    static int led = 0;\
+    LATBbits.LATB3 = led;\
+    led ^= 1; } while (0);
+
 
 /*=============================================================================
 initAdc() is used to configure A/D to convert channel 4 on Timer event. 
@@ -53,8 +58,8 @@ void initDac(void)
     DAC1STATbits.ROEN = 1; // Right Channel DAC Output Enabled
     DAC1DFLT = 0x8000; // DAC Default value is the midpoint
 
-    // Sampling Rate Fs = DACCLK/256 = 103 kHz
-    DAC1CONbits.DACFDIV = 7; // DACCLK = ACLK/(DACFDIV - 1): 158.2 MHz/6 = 26.4 MHz
+    // Sampling Rate Fs = DACCLK/256 = 44113 Hz
+    DAC1CONbits.DACFDIV = 13; // 158.2e6 / (44113*256) - 1 = 13
 
     DAC1CONbits.FORM = 1; // Data Format is signed integer
     DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
@@ -91,14 +96,16 @@ DMA0 configuration
 void initDma0(void)
 {
     DMA0CONbits.AMODE = 0; // Configure DMA for Register indirect with post increment
-    DMA0CONbits.MODE = 0; // Configure DMA for Continuous, no Ping-Pong mode
+    /* DMA0CONbits.MODE = 2; // Configure DMA for Continuous, Ping-Pong mode */
+    DMA0CONbits.MODE = 0; // Configure DMA for Continuous, Ping-Pong mode
 
     DMA0PAD = (int) &ADC1BUF0; // Peripheral Address Register: ADC buffer
     DMA0CNT = (NUMSAMP - 1); // DMA Transfer Count is (NUMSAMP-1)
 
     DMA0REQ = 13; // ADC interrupt selected for DMA channel IRQ
 
-    DMA0STA = __builtin_dmaoffset(buffer); // DMA RAM start address
+    DMA0STA = __builtin_dmaoffset(&buffer); // DMA RAM start address A
+    DMA0STB = __builtin_dmaoffset(&buffer + NUMSAMP); // DMA RAM start address B
 
     IFS0bits.DMA0IF = 0; // Clear the DMA interrupt flag bit
     IEC0bits.DMA0IE = 1; // Set the DMA interrupt enable bit
@@ -110,10 +117,12 @@ void initDma0(void)
 _DMA0Interrupt(): ISR name is chosen from the device linker script.
 =============================================================================*/
 int flag = 0;
+int dmabuffer = 0;
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
     flag = 1;
-
+    dmabuffer ^= 1;
+    TOGGLE_LED;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
@@ -123,11 +132,4 @@ _DAC1RInterrupt(): ISR name is chosen from the device linker script.
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     IFS4bits.DAC1RIF = 0; // Clear Right Channel Interrupt Flag
-}
-
-void __attribute__((interrupt, no_auto_psv)) _ADC1Interrupt(void)
-{
-    static int led;
-    LATBbits.LATB3 = led ? 0 : 1;
-    led = led ? 0 : 1;
 }

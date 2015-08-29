@@ -50,9 +50,9 @@ int main(void)
 
     TRISBbits.TRISB3 = 0; // Debug pin
 
-    extern fractional buffer[NUMSAMP]; // Ping pong buffer A
-    extern unsigned int DmaBuffer; // DMA flag
-    extern int flag; // Flag
+    extern fractional buffer[2][NUMSAMP]; // Ping pong buffers
+    extern int flag; // When a buffer has been filled...
+    extern int dmabuffer; // Buffer toggler
     int i;
 
     while (1)
@@ -60,7 +60,8 @@ int main(void)
         while (!flag);
         for (i = 0; i < NUMSAMP; i++) {
             while (DAC1STATbits.REMPTY != 1); // Wait for D/A conversion
-            DAC1RDAT = buffer[i]; // Load the DAC buffer with data
+            /* DAC1RDAT = buffer[dmabuffer][i]; // Load the DAC buffer with data */
+            DAC1RDAT = buffer[0][i]; // Load the DAC buffer with data
         }
         flag = 0;
     }
