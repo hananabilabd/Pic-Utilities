@@ -58,7 +58,8 @@ void initDac(void)
     DAC1DFLT = 0x8000; // DAC Default value is the midpoint
 
     // Sampling Rate Fs = DACCLK/256 = 48000
-    DAC1CONbits.DACFDIV = 12; // ACLK / (Fs*256) = 12
+    /* DAC1CONbits.DACFDIV = 12; // ACLK / (Fs*256) = 12 */
+    DAC1CONbits.DACFDIV = 11; // ACLK / (Fs*256) = 12
 
     DAC1CONbits.FORM = 1; // Data Format is signed integer
     DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
@@ -107,6 +108,7 @@ void initDma0(void)
 
 static int dmabuffer = 0;
 static int sample = 0;
+int samplemax = 0;
 
 /**
  * Interrupt for each full buffer.
@@ -119,17 +121,20 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
-int samplemax = 0;
 /**
  * Interrupt for each output sample, Ts.
  */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     DAC1RDAT = buffer[dmabuffer][sample];
-    if (++sample >= NUMSAMP)
-        sample = NUMSAMP-1;
 
     if (samplemax < sample)
         samplemax = sample;
+
+    if (++sample >= NUMSAMP) {
+        samplemax = 999;
+        sample = NUMSAMP-1;
+    }
+
     IFS4bits.DAC1RIF = 0;
 }
