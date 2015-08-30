@@ -26,7 +26,7 @@ void initAdc(void)
     AD1CON2bits.CHPS = 0; // Converts CH0
 
     AD1CON3bits.ADRC = 0; // ADC clock is derived from system clock
-    AD1CON3bits.ADCS = 3; // ADC clock period: TAD = (ADCS+1)*TCY = 100ns
+    AD1CON3bits.ADCS = 3; // ADC clock period: TAD = (ADCS+1)*TCY = ~100ns
 
     AD1CON1bits.ADDMABM = 1; // DMA buffer build mode
     AD1CON2bits.SMPI = 0; // Increment DMA address after each sampling
@@ -141,6 +141,5 @@ void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
         samplemax = samplecnt;
 
     /* TOGGLE_LED; */
-
     IFS4bits.DAC1RIF = 0;
 }

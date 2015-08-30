@@ -7,7 +7,7 @@
 #define FVCO 2*FOSC // Hz
 
 #define Fs 48000 // Hz
-#define SAMPPRD (FCY/Fs) // cycles per sample
+#define SAMPPRD (FCY/Fs)-1 // cycles per sample
 #define NUMSAMP 256
 
 // Functions
