@@ -11,11 +11,10 @@
 #define NUMSAMP 256
 
 // Functions
-void initAdc(void);
-void initDac(void);
-
-void initTmr3(void);
-void initDma0(void);
+void adc_init(void);
+void dac_init(void);
+void timer3_init(void);
+void dma0_init(void);
 
 // Peripheral ISRs
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void);

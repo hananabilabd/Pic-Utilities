@@ -12,14 +12,14 @@ _FOSCSEL(FNOSC_FRCPLL); // Use PLL with oscillator
 /**
  * Set up PLL for 80 MHz operation.
  */
-void initPll()
+void pll_init()
 {
     //                         Fin = 7.37 MHz
     CLKDIVbits.PLLPRE = 0;  // (1) Divide by (PLLPRE+2)
     PLLFBDbits.PLLDIV = 38; // (2) Multiply by (PLLDIV+2)
     CLKDIVbits.PLLPOST = 0; // (3) Divide by 2*(PLLPOST+1)
     
-    // 40 x: 73.7 MHz
+    // 7.37e6 * 40/(2*2): 73.7 MHz
 
     
     while (OSCCONbits.LOCK != 1); // Wait for PLL to lock
@@ -28,20 +28,12 @@ void initPll()
 
 int main(void)
 {
-    initPll();
-    initAdc();
-    initDac();
-    initDma0();
-
-    initTmr3();
-
-    TRISBbits.TRISB7 = 0; // TX = RP7
-    RPOR3bits.RP7R = 0b00011;
-    TRISBbits.TRISB6 = 1; // RX = RP6
-    RPINR18bits.U1RXR = 6;
+    pll_init();
+    adc_init();
+    dac_init();
+    dma0_init();
+    timer3_init();
     serial_init();
-
-    TRISBbits.TRISB3 = 0; // Debug pin
 
     serial_writeln("Starting...");
 

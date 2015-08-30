@@ -25,6 +25,11 @@
  */
 void serial_init()
 {
+    TRISBbits.TRISB7 = 0; // TX = RP7
+    RPOR3bits.RP7R = 0b00011;
+    TRISBbits.TRISB6 = 1; // RX = RP6
+    RPINR18bits.U1RXR = 6;
+
     U1MODE = 0x0000;
     U1BRG = 239; // Clock divisor
     U1STA = 0x0000;

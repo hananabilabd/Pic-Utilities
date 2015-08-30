@@ -7,16 +7,10 @@ static int buffer_a[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 static int buffer_b[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 static int *buffer[] = {buffer_a, buffer_b}; // Index buffer as buffer[a_or_b][sample]
 
-/* #define TOGGLE_LED do {\ */
-/*     static int __macro_led = 0;\ */
-/*     LATBbits.LATB3 = __macro_led;\ */
-/*     __macro_led ^= 1; } while (0); */
-#define TOGGLE_LED LATBbits.LATB3 ^= 1;
-
 /**
  * Initialize Analog-to-Digial converter.
  */
-void initAdc(void)
+void adc_init(void)
 {
     AD1CON1bits.FORM = 3;  // Signed format, Q15
     AD1CON1bits.SSRC = 2;  // Timer 3 starts conversion
@@ -47,27 +41,31 @@ void initAdc(void)
 /**
  * Initialize Audio DAC.
  */
-void initDac(void)
+void dac_init(void)
 {
-    /* Initiate DAC Clock */
-    // Set up DAC clock to be syncronous with Timer 3
-    ACLKCONbits.SELACLK = 0; // FRC + PLL as clock
-    ACLKCONbits.AOSCMD = 0; // Disable ACLK (PLL used instead)
-    ACLKCONbits.ASRCSEL = 0; // Use auxillary oscillator (not used)
+    /*
+     * Set up DAC clock to be syncronous with Timer 3
+     */
+    ACLKCONbits.SELACLK = 0;  // FRC + PLL as clock
+    ACLKCONbits.AOSCMD = 0;   // Disable ACLK (PLL used instead)
+    ACLKCONbits.ASRCSEL = 0;  // Use auxillary oscillator (not used)
     ACLKCONbits.APSTSCLR = 7; // ACLK = FVCO/1 = 147.456 MHz
 
-    DAC1STATbits.ROEN = 1; // Right Channel DAC Output Enabled
-    DAC1DFLT = 0x8000; // DAC Default value is the midpoint
+    DAC1STATbits.ROEN = 1; // Enable right DAC output
+    DAC1DFLT = 0x8000;     // Default to mid-point
 
-    // Sampling Rate Fs = DACCLK/256 = 48000
-    DAC1CONbits.DACFDIV = 11; // ACLK / (Fs*256) - 1 = 11
+    /* 
+     * Sampling Rate Fs = DACCLK/256 = 48000
+     * Set DAC clock divider to resolve the above equation.
+     */
+    DAC1CONbits.DACFDIV = 11; // ACLK/(Fs*256) - 1 = 11
 
-    DAC1CONbits.FORM = 1; // Data Format is signed integer
-    DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
+    DAC1CONbits.FORM = 1;  // Signed integer format (Q15)
+    DAC1CONbits.AMPON = 0; // Amplifier setup @ sleep
 
     DAC1STATbits.RITYPE = 1; // Interrupt when FIFO is empty
-    IFS4bits.DAC1RIF = 0; // Clear Right Channel Interrupt Flag
-    IEC4bits.DAC1RIE = 1; // Right Channel Interrupt Enabled
+    IFS4bits.DAC1RIF = 0;    // Clear Right Channel Interrupt Flag
+    IEC4bits.DAC1RIE = 1;    // Right Channel Interrupt Enabled
 
     DAC1CONbits.DACEN = 1; // DAC1 Module Enabled
 }
@@ -75,7 +73,7 @@ void initDac(void)
 /**
  * Timer 3: Used for triggering ADC conversion.
  */
-void initTmr3()
+void timer3_init()
 {
     TMR3 = 0x0000; // Clear TMR3
     PR3 = SAMPPRD; // Load period value in PR3
@@ -88,16 +86,20 @@ void initTmr3()
 /**
  * DMA0: Move data from ADC0 to buffer.
  */
-void initDma0(void)
+void dma0_init(void)
 {
-    DMA0CONbits.AMODE = 0; // Configure DMA for Register indirect with post increment
-    DMA0CONbits.MODE = 2; // Configure DMA for Continuous, Ping-Pong mode
+    DMA0CONbits.AMODE = 0; // Indirect addressing + post increment
+    DMA0CONbits.MODE = 2;  // Continuous, Ping-Pong mode
 
-    DMA0PAD = (int) &ADC1BUF0; // Peripheral Address Register: ADC buffer
-    DMA0CNT = (NUMSAMP - 1); // DMA Transfer Count is (NUMSAMP-1)
+    DMA0PAD = (int) &ADC1BUF0; // Read from: ADC
+    DMA0CNT = (NUMSAMP - 1);   // "Number of samples per buffer" minus one
 
-    DMA0REQ = 13; // ADC interrupt selected for DMA channel IRQ
-    /* DMA0REQ = 78; // DAC Right Output IRQ */
+    /*
+     * Both the ADC-sample-finished and DAC-output can be used as DMA trigger
+     * as these are syncronized.
+     */
+    DMA0REQ = 13; // "ADC finished" as IRQ
+    /* DMA0REQ = 78; // "DAC Right Output" as IRQ */
 
     DMA0STA = __builtin_dmaoffset(buffer_a); // DMA RAM start address A
     DMA0STB = __builtin_dmaoffset(buffer_b); // DMA RAM start address B
@@ -140,6 +142,5 @@ void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
     if (samplemax < samplecnt++)
         samplemax = samplecnt;
 
-    /* TOGGLE_LED; */
     IFS4bits.DAC1RIF = 0;
 }
