@@ -32,6 +32,7 @@ int main(void)
     initAdc();
     initDac();
     initDma0();
+
     initTmr3();
 
     TRISBbits.TRISB7 = 0; // TX = RP7

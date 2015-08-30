@@ -7,10 +7,11 @@ static int buffer_a[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 static int buffer_b[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 static int *buffer[] = {buffer_a, buffer_b}; // Index buffer as buffer[a_or_b][sample]
 
-#define TOGGLE_LED do {\
-    static int __macro_led = 0;\
-    LATBbits.LATB3 = __macro_led;\
-    __macro_led ^= 1; } while (0);
+/* #define TOGGLE_LED do {\ */
+/*     static int __macro_led = 0;\ */
+/*     LATBbits.LATB3 = __macro_led;\ */
+/*     __macro_led ^= 1; } while (0); */
+#define TOGGLE_LED LATBbits.LATB3 ^= 1;
 
 /**
  * Initialize Analog-to-Digial converter.
@@ -39,6 +40,7 @@ void initAdc(void)
 
     IFS0bits.AD1IF = 0;   // Clear the A/D interrupt flag bit
     IEC0bits.AD1IE = 0;   // Do Not Enable A/D interrupt
+
     AD1CON1bits.ADON = 1; // Turn on the A/D converter
 }
 
@@ -58,8 +60,7 @@ void initDac(void)
     DAC1DFLT = 0x8000; // DAC Default value is the midpoint
 
     // Sampling Rate Fs = DACCLK/256 = 48000
-    /* DAC1CONbits.DACFDIV = 12; // ACLK / (Fs*256) = 12 */
-    DAC1CONbits.DACFDIV = 11; // ACLK / (Fs*256) = 12
+    DAC1CONbits.DACFDIV = 11; // ACLK / (Fs*256) - 1 = 11
 
     DAC1CONbits.FORM = 1; // Data Format is signed integer
     DAC1CONbits.AMPON = 0; // Analog Output Amplifier is enabled during Sleep Mode/Stop-in Idle mode
@@ -96,6 +97,7 @@ void initDma0(void)
     DMA0CNT = (NUMSAMP - 1); // DMA Transfer Count is (NUMSAMP-1)
 
     DMA0REQ = 13; // ADC interrupt selected for DMA channel IRQ
+    /* DMA0REQ = 78; // DAC Right Output IRQ */
 
     DMA0STA = __builtin_dmaoffset(buffer_a); // DMA RAM start address A
     DMA0STB = __builtin_dmaoffset(buffer_b); // DMA RAM start address B
@@ -108,6 +110,7 @@ void initDma0(void)
 
 static int dmabuffer = 0;
 static int sample = 0;
+int samplecnt = 0;
 int samplemax = 0;
 
 /**
@@ -117,7 +120,8 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
     dmabuffer ^= 1;
     sample = 0;
-    TOGGLE_LED;
+    samplecnt = 0;
+
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
 
@@ -128,13 +132,15 @@ void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
     DAC1RDAT = buffer[dmabuffer][sample];
 
-    if (samplemax < sample)
-        samplemax = sample;
-
     if (++sample >= NUMSAMP) {
-        samplemax = 999;
         sample = NUMSAMP-1;
     }
+
+    // Count samples per buffer
+    if (samplemax < samplecnt++)
+        samplemax = samplecnt;
+
+    /* TOGGLE_LED; */
 
     IFS4bits.DAC1RIF = 0;
 }

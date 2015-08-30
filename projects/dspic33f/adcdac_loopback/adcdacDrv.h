@@ -7,12 +7,13 @@
 #define FVCO 2*FOSC // Hz
 
 #define Fs 48000 // Hz
-#define SAMPPRD (FCY/Fs) // Hz
+#define SAMPPRD (FCY/Fs) // cycles per sample
 #define NUMSAMP 256
 
 // Functions
 void initAdc(void);
 void initDac(void);
+
 void initTmr3(void);
 void initDma0(void);
 
