@@ -1,7 +1,7 @@
 #include <xc.h>
 #include <stdint.h>
 #include "dsp.h"
-#include "adcdacDrv.h"
+#include "adcdac.h"
 
 static int buffer_a[NUMSAMP] __attribute__((space(dma))); // Buffer for data
 static int buffer_b[NUMSAMP] __attribute__((space(dma))); // Buffer for data

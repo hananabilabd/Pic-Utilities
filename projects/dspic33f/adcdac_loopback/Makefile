@@ -22,7 +22,7 @@ HWTOOL = pickit3 -p
 
 # Source files
 # Example: serial.c
-SOURCES = main.c adcdacDrv.c serial.c
+SOURCES = main.c adcdac.c serial.c
 
 # Tool paths
 # TODO: DEBUGGER is not used!

@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "dsp.h"
-#include "adcdacDrv.h"
+#include "adcdac.h"
 #include "serial.h"
 
 #include <libpic30.h>
