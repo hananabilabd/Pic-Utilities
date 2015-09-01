@@ -132,15 +132,17 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
  */
 void __attribute__((interrupt, no_auto_psv)) _DAC1RInterrupt(void)
 {
+    DAC1RDAT = buffer[dmabuffer][sample]; 
+
     // Simple Moving Average filter
-    static int x[] = {0,0,0}; // Previous samples
-    DAC1RDAT = (buffer[dmabuffer][sample]>>2) 
-        + (x[0]>>2)
-        + (x[1]>>2)
-        + (x[2]>>2);
-    x[2] = x[1];
-    x[1] = x[0];
-    x[0] = buffer[dmabuffer][sample];
+    /* static int x[] = {0,0,0}; // Previous samples */
+    /* DAC1RDAT = (buffer[dmabuffer][sample]>>2)  */
+    /*     + (x[0]>>2) */
+    /*     + (x[1]>>2) */
+    /*     + (x[2]>>2); */
+    /* x[2] = x[1]; */
+    /* x[1] = x[0]; */
+    /* x[0] = buffer[dmabuffer][sample]; */
 
     if (++sample >= NUMSAMP) {
         sample = NUMSAMP-1;

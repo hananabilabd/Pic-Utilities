@@ -43,9 +43,9 @@ int main(void)
     while (1) { 
         // Interrupt driven execution.
         // Debug printing done here.
-        sprintf(msg, "Sample Max: %d", samplemax);
-        serial_writeln(msg);
-        __delay_ms(1000);
+        /* sprintf(msg, "Sample Max: %d", samplemax); */
+        /* serial_writeln(msg); */
+        /* __delay_ms(1000); */
     }
 
     return 0;
